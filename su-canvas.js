@@ -1,4 +1,4 @@
-import { SuClient } from 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js'
+import { SuClient } from './su-client.js?v=20260511'
 
 /**
  * SuCanvas - Multi-tab manager for SuClient instances.

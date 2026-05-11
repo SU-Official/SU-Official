@@ -6,8 +6,8 @@
     <title>Premium Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js" />
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js?v=20260511" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js?v=20260511" />
     <style>
       :root {
         --bg: #030303;
@@ -405,7 +405,25 @@
     </div>
 
     <script type="module">
-      import { SuCanvas } from 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js'
+      const SU_CDN_BASE = 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/'
+      const SU_CDN_VERSION = '20260511'
+
+      async function loadSuCanvas() {
+        const cdnClientUrl = `${SU_CDN_BASE}su-client.js?v=${SU_CDN_VERSION}`
+        const cdnCanvasUrl = `${SU_CDN_BASE}su-canvas.js?v=${SU_CDN_VERSION}`
+        try {
+          const clientModule = await import(cdnClientUrl)
+          window.SuClient = clientModule.SuClient || window.SuClient
+          return await import(cdnCanvasUrl)
+        } catch (cdnError) {
+          console.warn('Falling back to local SU modules after CDN import failed:', cdnError)
+          const clientModule = await import('./su-client.js')
+          window.SuClient = clientModule.SuClient || window.SuClient
+          return import('./su-canvas.js')
+        }
+      }
+
+      const { SuCanvas } = await loadSuCanvas()
 
       const cvs = document.getElementById('starfield')
       const ctx = cvs.getContext('2d')
