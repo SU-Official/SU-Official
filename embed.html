@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connecting...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js?v=20260511" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js?v=20260511" />
+    <style>
+      :root {
+        --bg: #030303;
+        --border: #330000;
+        --text: #ffffff;
+        --text-muted: #8e7e7e;
+        --accent: #ff3333;
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      #canvas-container, #canvas-container iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      #canvas-container iframe { background: white; }
+
+      .loading {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, rgba(51, 0, 0, 0.35), rgba(3, 3, 3, 0.96));
+        backdrop-filter: blur(10px);
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+
+      .loading.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .spinner {
+        width: 64px;
+        height: 64px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 22px;
+        box-shadow: 0 0 18px rgba(255, 51, 51, 0.45);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+      }
+
+      p {
+        max-width: min(680px, 90vw);
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 14px;
+        font-weight: 600;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+
+      #target-url { color: var(--accent); }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div id="canvas-container"></div>
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <h1>Connecting...</h1>
+      <p>Proxying <span id="target-url"></span></p>
+    </div>
+
+    <script type="module">
+      const SU_CDN_BASE = 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/'
+      const SU_CDN_VERSION = '20260511'
+
+      async function loadSuCanvas() {
+        const cdnClientUrl = `${SU_CDN_BASE}su-client.js?v=${SU_CDN_VERSION}`
+        const cdnCanvasUrl = `${SU_CDN_BASE}su-canvas.js?v=${SU_CDN_VERSION}`
+        try {
+          const clientModule = await import(cdnClientUrl)
+          window.SuClient = clientModule.SuClient || window.SuClient
+          return await import(cdnCanvasUrl)
+        } catch (cdnError) {
+          console.warn('Falling back to local SU modules after CDN import failed:', cdnError)
+          const clientModule = await import('./su-client.js')
+          window.SuClient = clientModule.SuClient || window.SuClient
+          return import('./su-canvas.js')
+        }
+      }
+
+      const { SuCanvas } = await loadSuCanvas()
+
+      const DEFAULT_URL = 'https://now.gg'
+      const loading = document.getElementById('loading')
+      const targetUrl = document.getElementById('target-url')
+      const rawHash = decodeURIComponent(location.hash.slice(1)).trim()
+      let target = rawHash || DEFAULT_URL
+
+      if (!/^https?:\/\//i.test(target)) {
+        target = `https://${target}`
+      }
+
+      document.title = `Connecting to ${target}`
+      targetUrl.textContent = target
+
+      const canvas = new SuCanvas('canvas-container')
+      canvas.on(SuCanvas.EVENTS.READY, () => {
+        const active = canvas.activeSurface
+        if (active && !active.client._lastUrl) canvas.navigate(target)
+      })
+      canvas.on(SuCanvas.EVENTS.LOADING_START, () => loading.classList.remove('hidden'))
+      canvas.on(SuCanvas.EVENTS.LOADING_STOP, () => loading.classList.add('hidden'))
+      canvas.on(SuCanvas.EVENTS.TITLE_CHANGE, (title) => {
+        if (title) document.title = title
+      })
+      canvas.on(SuCanvas.EVENTS.ERROR, (error) => {
+        console.error(error)
+        targetUrl.textContent = `Error: ${error?.message || error}`
+      })
+
+      canvas.createSurface()
+      setTimeout(() => loading.classList.add('hidden'), 12000)
+    </script>
+  </body>
+</html>

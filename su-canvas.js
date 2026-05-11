@@ -1,3 +1,5 @@
+import { SuClient } from './su-client.js?v=20260511'
+
 /**
  * SuCanvas - Multi-tab manager for SuClient instances.
  * Acts as the "Virtual Browser" controller.
