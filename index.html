@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Premium Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js" />
+    <style>
+      :root {
+        --bg: #030303;
+        --surface: #0a0a0a;
+        --surface-hover: #170505;
+        --surface-active: #240505;
+        --border: #330000;
+        --border-light: #ff3333;
+        --text: #ffffff;
+        --text-muted: #8e7e7e;
+        --accent: #ff3333;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+      body, html {
+        font-family: 'Inter', system-ui, sans-serif;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        background: var(--bg);
+        overflow: hidden;
+        color: var(--text);
+      }
+
+      #starfield {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .browser-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        position: relative;
+        z-index: 1;
+      }
+
+      .tabs {
+        display: flex;
+        padding: 8px 8px 0;
+        gap: 4px;
+        background: var(--bg);
+        overflow-x: auto;
+      }
+      .tabs::-webkit-scrollbar { height: 0; }
+
+      .tab {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 8px 12px;
+        min-width: 180px;
+        max-width: 220px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.15s ease;
+      }
+      .tab:hover { background: var(--surface-hover); }
+      .tab.active {
+        background: var(--surface-active);
+        border-color: var(--accent);
+        color: var(--text);
+        box-shadow: inset 0 2px 0 var(--accent);
+      }
+      .tab-title {
+        flex: 1;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tab-close {
+        font-size: 16px;
+        color: var(--text-muted);
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.15s;
+      }
+      .tab-close:hover { color: var(--accent); transform: scale(1.1); }
+
+      .new-tab {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 18px;
+        margin-top: 4px;
+        transition: 0.2s;
+      }
+      .new-tab:hover { background: var(--surface-hover); color: var(--accent); }
+      .new-tab:active { transform: scale(0.9); }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        position: relative;
+      }
+      .nav button {
+        width: 36px;
+        height: 36px;
+        background: transparent;
+        border: none;
+        border-radius: 8px;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .nav button:hover { background: var(--surface-hover); color: var(--accent); }
+      .nav button:active { transform: scale(0.85); }
+
+      .address-wrapper { flex: 1; position: relative; display: flex; align-items: center; }
+      input.bar {
+        width: 100%;
+        height: 36px;
+        padding: 0 40px 0 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 13px;
+        outline: none;
+        transition: 0.2s;
+      }
+      input.bar:focus { border-color: var(--accent); box-shadow: 0 0 8px rgba(255, 51, 51, 0.2); }
+      #home-btn-nav { position: absolute; right: 4px; width: 28px; height: 28px; }
+
+      .menu-wrapper { position: relative; }
+      .dropdown-menu {
+        position: absolute;
+        top: 45px;
+        right: 0;
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        width: 200px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        overflow: hidden;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px) scale(0.95);
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transform-origin: top right;
+      }
+      .dropdown-menu.active { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+      .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+      }
+      .dropdown-item i { color: var(--text-muted); font-size: 14px; width: 16px; text-align: center; transition: color 0.2s; }
+      .dropdown-item:hover { background: var(--surface-active); color: var(--accent); }
+      .dropdown-item:hover i { color: var(--accent); }
+      .dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+      .content-area { flex: 1; position: relative; background: transparent; }
+      #canvas-container, #canvas-container iframe { width: 100%; height: 100%; border: none; }
+      #canvas-container { position: absolute; inset: 0; }
+      #canvas-container iframe { background: white; }
+
+      .proxy-loading {
+        position: absolute;
+        inset: 0;
+        background: rgba(3, 3, 3, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+      .proxy-loading.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+      .spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
+      }
+      .proxy-loading p {
+        color: var(--text);
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-size: 14px;
+        animation: pulseText 1.5s infinite;
+      }
+      #connection-target { color: var(--accent); letter-spacing: 0; text-transform: none; }
+      @keyframes spin { 100% { transform: rotate(360deg); } }
+      @keyframes pulseText {
+        0%, 100% { opacity: 1; text-shadow: 0 0 10px rgba(255, 255, 255, 0.4); }
+        50% { opacity: 0.5; text-shadow: none; }
+      }
+
+      .home-view {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+      }
+      .home-view.hidden { display: none; }
+      .brand-title { font-size: 64px; font-weight: 900; letter-spacing: 4px; margin: 0 0 12px; text-transform: uppercase; text-align: center; }
+      .brand-title .text-white { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+      .brand-title .text-red { color: var(--accent); text-shadow: 0 0 10px rgba(255, 51, 51, 0.4); }
+      .tagline { color: var(--text-muted); font-weight: bold; letter-spacing: 3px; text-transform: uppercase; font-size: 14px; margin-bottom: 40px; }
+
+      .search-container {
+        display: flex;
+        align-items: center;
+        background: rgba(10, 10, 10, 0.8);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        width: 600px;
+        max-width: 90%;
+        padding: 5px 15px;
+        margin-bottom: 40px;
+        transition: 0.2s;
+        backdrop-filter: blur(5px);
+      }
+      .search-container:focus-within { border-color: var(--accent); box-shadow: 0 0 15px rgba(255, 51, 51, 0.2); }
+      .search-container i { color: var(--text-muted); }
+      .search-container input { flex: 1; background: transparent; border: none; color: var(--text); padding: 12px 15px; font-size: 1rem; outline: none; }
+      .search-engine-select { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; outline: none; cursor: pointer; }
+      .search-engine-select option { background: var(--surface); }
+
+      .apps-title { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; font-weight: 600; }
+      .shortcuts-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; max-width: 600px; margin-bottom: 30px; }
+      .shortcut { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+      .shortcut-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(10, 10, 10, 0.8);
+        backdrop-filter: blur(5px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: var(--text);
+        transition: 0.2s;
+      }
+      .shortcut:hover .shortcut-icon { background: var(--surface-active); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 15px rgba(255, 51, 51, 0.3); transform: translateY(-3px); }
+      .shortcut-text { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+
+      .wisp-settings-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+      .wisp-settings-modal.hidden { display: none; }
+      .settings-card { background: var(--surface); width: 400px; max-width: 90vw; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6); }
+      .settings-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--surface-hover); }
+      .settings-header h2 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; }
+      .close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px; border-radius: 4px; transition: all 0.15s; }
+      .close-btn:hover { color: var(--accent); }
+      .settings-content { padding: 20px; }
+      .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; }
+      #history-list { max-height: 400px; overflow-y: auto; padding: 0; }
+      .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
+      .history-item:hover { background: var(--surface-active); }
+      .history-info { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+      .history-title { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .history-url { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #history-list::-webkit-scrollbar { width: 6px; }
+      #history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+      #history-list::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+      @media (max-width: 640px) { .brand-title { font-size: 40px; } .shortcuts-grid { grid-template-columns: repeat(3, 1fr); } }
+    </style>
+  </head>
+  <body>
+    <canvas id="starfield"></canvas>
+
+    <div class="browser-container">
+      <div class="tabs" id="tabs-container">
+        <button class="new-tab" id="new-tab-btn" title="New tab"><i class="fa-solid fa-plus"></i></button>
+      </div>
+
+      <div class="nav">
+        <button id="back-btn" title="Back"><i class="fa-solid fa-chevron-left"></i></button>
+        <button id="forward-btn" title="Forward"><i class="fa-solid fa-chevron-right"></i></button>
+        <button id="refresh-btn" title="Refresh"><i class="fa-solid fa-rotate-right"></i></button>
+        <div class="address-wrapper">
+          <input type="text" class="bar" id="urlbar" placeholder="Search or enter URL" />
+          <button id="home-btn-nav" title="Home"><i class="fa-solid fa-house"></i></button>
+        </div>
+        <div class="menu-wrapper">
+          <button id="menu-btn" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+          <div id="dropdown-menu" class="dropdown-menu">
+            <div class="dropdown-item" id="menu-history"><i class="fa-solid fa-clock-rotate-left"></i> History</div>
+            <div class="dropdown-item" id="menu-bookmarks"><i class="fa-solid fa-bookmark"></i> Bookmarks</div>
+            <div class="dropdown-item" id="menu-settings"><i class="fa-solid fa-gear"></i> Settings</div>
+            <div class="dropdown-divider"></div>
+            <div class="dropdown-item" id="menu-devtools"><i class="fa-solid fa-code"></i> Dev Tools</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area" id="content-area">
+        <div id="canvas-container"></div>
+        <div id="proxy-loading" class="proxy-loading hidden">
+          <div class="spinner"></div>
+          <p>Connecting... <span id="connection-target"></span></p>
+        </div>
+
+        <div id="home-view" class="home-view">
+          <h1 class="brand-title"><span class="text-white">PREMIUM</span> <span class="text-red">HUB</span></h1>
+          <div class="tagline">MADE BY Alexmxteix☑️</div>
+          <div class="search-container">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="home-search" placeholder="Search the web..." />
+            <select class="search-engine-select" id="search-engine-select">
+              <option value="brave">Brave</option>
+              <option value="google">Google</option>
+              <option value="duckduckgo">DuckDuckGo</option>
+            </select>
+          </div>
+
+          <div class="apps-title">Apps & Shortcuts</div>
+          <div class="shortcuts-grid">
+            <div class="shortcut" data-url="https://youtube.com"><div class="shortcut-icon"><i class="fa-brands fa-youtube"></i></div><span class="shortcut-text">YouTube</span></div>
+            <div class="shortcut" data-url="https://github.com"><div class="shortcut-icon"><i class="fa-brands fa-github"></i></div><span class="shortcut-text">GitHub</span></div>
+            <div class="shortcut" data-url="https://discord.com"><div class="shortcut-icon"><i class="fa-brands fa-discord"></i></div><span class="shortcut-text">Discord</span></div>
+            <div class="shortcut" data-url="https://twitter.com"><div class="shortcut-icon"><i class="fa-brands fa-x-twitter"></i></div><span class="shortcut-text">Twitter</span></div>
+            <div class="shortcut" data-url="https://reddit.com"><div class="shortcut-icon"><i class="fa-brands fa-reddit-alien"></i></div><span class="shortcut-text">Reddit</span></div>
+            <div class="shortcut" data-url="https://open.spotify.com"><div class="shortcut-icon"><i class="fa-brands fa-spotify"></i></div><span class="shortcut-text">Spotify</span></div>
+            <div class="shortcut" data-url="https://netflix.com"><div class="shortcut-icon"><i class="fa-solid fa-n"></i></div><span class="shortcut-text">Netflix</span></div>
+            <div class="shortcut" data-url="https://twitch.tv"><div class="shortcut-icon"><i class="fa-brands fa-twitch"></i></div><span class="shortcut-text">Twitch</span></div>
+            <div class="shortcut" data-url="https://gmail.com"><div class="shortcut-icon"><i class="fa-solid fa-envelope"></i></div><span class="shortcut-text">Gmail</span></div>
+            <div class="shortcut" id="add-shortcut"><div class="shortcut-icon"><i class="fa-solid fa-plus"></i></div><span class="shortcut-text">Add</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="wisp-settings-modal hidden">
+      <div class="settings-card">
+        <div class="settings-header"><h2><i class="fa-solid fa-server"></i> Settings</h2><button class="close-btn" id="close-settings"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="settings-content">
+          <div class="section-title">Proxy Engine</div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Premium Hub uses the SU proxy runtime and CDN-hosted assets automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="history-modal" class="wisp-settings-modal hidden">
+      <div class="settings-card history-card" style="width: 500px;">
+        <div class="settings-header">
+          <h2><i class="fa-solid fa-clock-rotate-left"></i> History</h2>
+          <div style="display:flex; gap:10px;"><button id="clear-history-btn" class="close-btn" style="font-size:12px; font-weight:bold; padding: 4px 8px;"><i class="fa-solid fa-trash"></i> Clear</button><button class="close-btn" id="close-history"><i class="fa-solid fa-xmark"></i></button></div>
+        </div>
+        <div class="settings-content" id="history-list"></div>
+      </div>
+    </div>
+
+    <div id="bookmarks-modal" class="wisp-settings-modal hidden">
+      <div class="settings-card history-card" style="width: 400px; text-align: center;">
+        <div class="settings-header"><h2><i class="fa-solid fa-bookmark"></i> Bookmarks</h2><button class="close-btn" id="close-bookmarks"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="settings-content" style="padding: 40px 20px;"><i class="fa-solid fa-person-digging" style="font-size: 48px; color: var(--accent); margin-bottom: 16px;"></i><h3 style="margin: 0; color: var(--text);">Coming Soon!</h3><p style="color: var(--text-muted); font-size: 13px; margin-top: 8px;">The bookmarks panel is currently under construction.</p></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { SuCanvas } from 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js'
+
+      const cvs = document.getElementById('starfield')
+      const ctx = cvs.getContext('2d')
+      let w, h, stars = [], rips = []
+      let mx = -1000, my = -1000
+
+      function initCanvas() {
+        w = window.innerWidth
+        h = window.innerHeight
+        cvs.width = w
+        cvs.height = h
+        stars = []
+        for (let i = 0; i < 200; i += 1) {
+          const star = { x: Math.random() * w, y: Math.random() * h, ox: 0, oy: 0, z: Math.random() * 1.5 + 0.5, o: Math.random() * 0.7 + 0.2, v: Math.random() * 0.1 + 0.05 }
+          star.ox = star.x
+          star.oy = star.y
+          stars.push(star)
+        }
+      }
+
+      function drawCanvas() {
+        ctx.clearRect(0, 0, w, h)
+        stars.forEach((s) => {
+          const dx = mx - s.ox
+          const dy = my - s.oy
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          let forceX = 0, forceY = 0
+          if (dist < 150) {
+            const angle = Math.atan2(dy, dx)
+            const push = (150 - dist) * 0.2
+            forceX = -Math.cos(angle) * push
+            forceY = -Math.sin(angle) * push
+          }
+          s.x += (s.ox + forceX - s.x) * 0.1
+          s.y += (s.oy + forceY - s.y) * 0.1
+          s.oy -= s.v
+          s.y -= s.v
+          if (s.oy < -10) {
+            s.oy = h + 10
+            s.y = h + 10
+            s.ox = Math.random() * w
+            s.x = s.ox
+          }
+          ctx.beginPath()
+          ctx.arc(s.x, s.y, s.z, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(255,255,255,${s.o})`
+          ctx.fill()
+        })
+        rips.forEach((r, i) => {
+          r.r += 6
+          r.a -= 0.02
+          if (r.a <= 0) rips.splice(i, 1)
+          ctx.beginPath()
+          ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2)
+          ctx.strokeStyle = `rgba(255,51,51,${r.a})`
+          ctx.lineWidth = 1.5
+          ctx.stroke()
+        })
+        requestAnimationFrame(drawCanvas)
+      }
+
+      window.addEventListener('mousemove', (e) => { mx = e.clientX; my = e.clientY })
+      window.addEventListener('mousedown', (e) => rips.push({ x: e.clientX, y: e.clientY, r: 0, a: 1 }))
+      window.addEventListener('resize', initCanvas)
+      initCanvas()
+      drawCanvas()
+
+      const canvas = new SuCanvas('canvas-container')
+      const tabs = []
+      let activeTabId = null
+      const tabsContainer = document.getElementById('tabs-container')
+      const newTabBtn = document.getElementById('new-tab-btn')
+      const homeView = document.getElementById('home-view')
+      const urlBar = document.getElementById('urlbar')
+      const homeSearch = document.getElementById('home-search')
+      const proxyLoading = document.getElementById('proxy-loading')
+      const connectionTarget = document.getElementById('connection-target')
+      const dropdownMenu = document.getElementById('dropdown-menu')
+      let browserHistory = JSON.parse(localStorage.getItem('premium_hub_history') || '[]')
+
+      function normalizeInput(input) {
+        let url = input.trim()
+        if (!url) return ''
+        if (!url.includes('.') || url.includes(' ')) {
+          const engine = document.getElementById('search-engine-select').value
+          const search = engine === 'google' ? 'https://www.google.com/search?q=' : engine === 'duckduckgo' ? 'https://duckduckgo.com/?q=' : 'https://search.brave.com/search?q='
+          return search + encodeURIComponent(url)
+        }
+        if (!/^https?:\/\//i.test(url)) url = `https://${url}`
+        return url
+      }
+
+      function currentTab() {
+        return tabs.find((tab) => tab.id === activeTabId)
+      }
+
+      function waitForReady(tabId) {
+        return new Promise((resolve, reject) => {
+          const started = Date.now()
+          const tick = () => {
+            const surface = canvas.surfaces.get(tabId)
+            const state = surface?.client.getState()
+            if (state?.ready) {
+              resolve()
+            } else if (state?.error) {
+              reject(new Error(state.error))
+            } else if (Date.now() - started > 10000) {
+              reject(new Error('Proxy startup timed out'))
+            } else {
+              setTimeout(tick, 50)
+            }
+          }
+          tick()
+        })
+      }
+
+      function setLoading(isLoading, url = '') {
+        connectionTarget.textContent = url ? ` ${url}` : ''
+        proxyLoading.classList.toggle('hidden', !isLoading)
+      }
+
+      function updateTabTitle(id, title) {
+        const tab = tabs.find((item) => item.id === id)
+        if (tab) tab.title = title || 'New Tab'
+        const titleEl = document.querySelector(`#tab-${CSS.escape(id)} .tab-title`)
+        if (titleEl) titleEl.textContent = title || 'New Tab'
+      }
+
+      function addHistoryEntry(url, title = url) {
+        if (!url) return
+        browserHistory = browserHistory.filter((item) => item.url !== url)
+        browserHistory.unshift({ url, title, timestamp: new Date().toISOString() })
+        if (browserHistory.length > 150) browserHistory = browserHistory.slice(0, 150)
+        localStorage.setItem('premium_hub_history', JSON.stringify(browserHistory))
+      }
+
+      function renderHistory() {
+        const list = document.getElementById('history-list')
+        list.innerHTML = ''
+        if (browserHistory.length === 0) {
+          list.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px;">No history recorded yet.</div>'
+          return
+        }
+        browserHistory.forEach((item) => {
+          const div = document.createElement('div')
+          div.className = 'history-item'
+          div.innerHTML = `<div class="history-info"><span class="history-title"></span><span class="history-url"></span></div><i class="fa-solid fa-arrow-up-right-from-square" style="color: var(--text-muted); font-size: 14px;"></i>`
+          div.querySelector('.history-title').textContent = item.title
+          div.querySelector('.history-url').textContent = item.url
+          div.onclick = () => {
+            document.getElementById('history-modal').classList.add('hidden')
+            createTab(item.url)
+          }
+          list.appendChild(div)
+        })
+      }
+
+      function createTab(url = '') {
+        const id = canvas.createSurface()
+        const tab = { id, title: 'New Tab', url: '', isHome: !url }
+        tabs.push(tab)
+        const tabEl = document.createElement('div')
+        tabEl.className = 'tab'
+        tabEl.id = `tab-${id}`
+        tabEl.innerHTML = '<span class="tab-title">New Tab</span><span class="tab-close">×</span>'
+        tabEl.onclick = () => switchTab(id)
+        tabEl.querySelector('.tab-close').onclick = (event) => { event.stopPropagation(); closeTab(id) }
+        tabsContainer.insertBefore(tabEl, newTabBtn)
+        switchTab(id)
+        if (url) navigateTab(id, url)
+      }
+
+      function switchTab(id) {
+        activeTabId = id
+        canvas.switchSurface(id)
+        const tab = currentTab()
+        document.querySelectorAll('.tab').forEach((el) => el.classList.remove('active'))
+        document.getElementById(`tab-${id}`)?.classList.add('active')
+        homeView.classList.toggle('hidden', !tab?.isHome)
+        urlBar.value = tab?.url || ''
+        setLoading(false)
+        if (tab?.isHome) homeSearch.focus()
+      }
+
+      function closeTab(id) {
+        document.getElementById(`tab-${id}`)?.remove()
+        canvas.closeSurface(id)
+        const idx = tabs.findIndex((tab) => tab.id === id)
+        if (idx !== -1) tabs.splice(idx, 1)
+        if (tabs.length === 0) createTab()
+        else if (activeTabId === id) switchTab(tabs[Math.max(0, idx - 1)]?.id || tabs[0].id)
+      }
+
+      async function navigateTab(tabId, inputVal) {
+        const tab = tabs.find((item) => item.id === tabId)
+        if (!tab) return
+        const url = normalizeInput(inputVal)
+        if (!url) return
+        tab.isHome = false
+        tab.url = url
+        homeView.classList.add('hidden')
+        urlBar.value = url
+        updateTabTitle(tabId, url)
+        addHistoryEntry(url)
+        switchTab(tabId)
+        setLoading(true, url)
+        try {
+          await waitForReady(tabId)
+          canvas.navigate(url)
+        } catch (error) {
+          console.error(error)
+          connectionTarget.textContent = ` Error: ${error.message}`
+        }
+      }
+
+      canvas.on(SuCanvas.EVENTS.URL_CHANGE, (data) => {
+        const tab = currentTab()
+        if (tab && data.decoded && data.decoded !== 'about:blank') {
+          tab.url = data.decoded
+          urlBar.value = data.decoded
+        }
+      })
+      canvas.on(SuCanvas.EVENTS.TITLE_CHANGE, (title) => {
+        const tab = currentTab()
+        if (!tab) return
+        updateTabTitle(tab.id, title)
+        if (tab.url) addHistoryEntry(tab.url, title)
+      })
+      canvas.on(SuCanvas.EVENTS.LOADING_START, () => setLoading(true, currentTab()?.url || ''))
+      canvas.on(SuCanvas.EVENTS.LOADING_STOP, () => setLoading(false))
+      canvas.on(SuCanvas.EVENTS.ERROR, (error) => {
+        console.error(error)
+        setLoading(false)
+      })
+
+      document.querySelectorAll('.shortcut[data-url]').forEach((btn) => {
+        btn.onclick = () => navigateTab(activeTabId, btn.getAttribute('data-url'))
+      })
+      document.getElementById('add-shortcut').onclick = () => alert('Custom shortcuts are coming soon.')
+      newTabBtn.onclick = () => createTab()
+      urlBar.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && urlBar.value.trim()) {
+          navigateTab(activeTabId, urlBar.value)
+          urlBar.blur()
+        }
+      })
+      homeSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && homeSearch.value.trim()) {
+          navigateTab(activeTabId, homeSearch.value)
+          homeSearch.value = ''
+        }
+      })
+      document.getElementById('home-btn-nav').onclick = () => {
+        const tab = currentTab()
+        if (!tab) return
+        tab.isHome = true
+        tab.url = ''
+        updateTabTitle(activeTabId, 'New Tab')
+        switchTab(activeTabId)
+      }
+      document.getElementById('refresh-btn').onclick = () => canvas.reload()
+      document.getElementById('back-btn').onclick = () => canvas.goBack()
+      document.getElementById('forward-btn').onclick = () => canvas.goForward()
+      document.getElementById('menu-btn').onclick = (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('active') }
+      document.addEventListener('click', (e) => {
+        if (!dropdownMenu.contains(e.target) && !document.getElementById('menu-btn').contains(e.target)) dropdownMenu.classList.remove('active')
+      })
+      document.getElementById('menu-history').onclick = () => { dropdownMenu.classList.remove('active'); renderHistory(); document.getElementById('history-modal').classList.remove('hidden') }
+      document.getElementById('close-history').onclick = () => document.getElementById('history-modal').classList.add('hidden')
+      document.getElementById('clear-history-btn').onclick = () => { browserHistory = []; localStorage.removeItem('premium_hub_history'); renderHistory() }
+      document.getElementById('menu-bookmarks').onclick = () => { dropdownMenu.classList.remove('active'); document.getElementById('bookmarks-modal').classList.remove('hidden') }
+      document.getElementById('close-bookmarks').onclick = () => document.getElementById('bookmarks-modal').classList.add('hidden')
+      document.getElementById('menu-settings').onclick = () => { dropdownMenu.classList.remove('active'); document.getElementById('settings-modal').classList.remove('hidden') }
+      document.getElementById('close-settings').onclick = () => document.getElementById('settings-modal').classList.add('hidden')
+      document.getElementById('menu-devtools').onclick = () => alert('Dev Tools injection is not available in this SU build yet.')
+
+      createTab()
+    </script>
+  </body>
+</html>
