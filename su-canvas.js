@@ -1,3 +1,5 @@
+import { SuClient } from 'https://cdn.jsdelivr.net/gh/Sea-Math/OFFICIAL-SU-REPO@main/su-client.js'
+
 /**
  * SuCanvas - Multi-tab manager for SuClient instances.
  * Acts as the "Virtual Browser" controller.
