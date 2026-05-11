@@ -36,11 +36,11 @@ class SuClient {
    */
   constructor(options = {}) {
     this.options = {
-      uvConfigPath: 'su.config.mjs',
-      uvBundlePath: 'su.bundle.mjs',
-      uvClientPath: 'su.canvas.mjs',
-      tidePath: 'tide/index.mjs',
-      workerPath: 'tide/worker.js',
+      uvConfigPath: 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su.config.mjs',
+      uvBundlePath: 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su.bundle.mjs',
+      uvClientPath: 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su.canvas.mjs',
+      tidePath: 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/tide/index.mjs',
+      workerPath: 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/tide/worker.js',
       searchEngine: 'https://duckduckgo.com/?q=%s',
       timeout: 5000,
       loadBareMux: true,
@@ -161,14 +161,14 @@ class SuClient {
 
       const connection = new window.BareMux.BareMuxConnection(workerUrl)
       const wispURL = window.__uv$config.wisp
-      const transportUrl = new URL('boat/index.mjs', location.href).href
+      const transportUrl = new URL('https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/boat/index.mjs', location.href).href
 
       console.log('🔧 Setting transport to Wisp (Remote Server):', wispURL)
       await connection.setTransport(transportUrl, [{ wisp: wispURL }])
       console.log('✅ Boat transport configured')
 
       // Force update of SW
-      await this.registerServiceWorker('current.js?v=' + Date.now(), 'module')
+      await this.registerServiceWorker(new URL('current.js?v=' + Date.now(), location.href).href, 'module')
 
       this.encodeUrl = (url) => {
         return window.location.origin + window.__uv$config.prefix + window.__uv$config.encodeUrl(url)
