@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Connecting...</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js" />
     <style>
       :root {
         --bg: #030303;
@@ -95,7 +97,7 @@
     </div>
 
     <script type="module">
-      import { SuCanvas } from './su-canvas.js'
+      import { SuCanvas } from 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js'
 
       const DEFAULT_URL = 'https://now.gg'
       const loading = document.getElementById('loading')

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Premium Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js" />
     <style>
       :root {
         --bg: #030303;
@@ -403,7 +405,7 @@
     </div>
 
     <script type="module">
-      import { SuCanvas } from './su-canvas.js'
+      import { SuCanvas } from 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-canvas.js'
 
       const cvs = document.getElementById('starfield')
       const ctx = cvs.getContext('2d')

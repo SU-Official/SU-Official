@@ -1,4 +1,4 @@
-import { SuClient } from 'https://cdn.jsdelivr.net/gh/Sea-Math/OFFICIAL-SU-REPO@main/su-client.js'
+import { SuClient } from 'https://cdn.jsdelivr.net/gh/SU-Official/SU-Official@main/su-client.js'
 
 /**
  * SuCanvas - Multi-tab manager for SuClient instances.
